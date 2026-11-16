@@ -1,0 +1,27 @@
+name: Capturas de tela (conferir a aparencia)
+
+# Roda so quando pedido (aba Actions > Run workflow). Compila o programa, abre no Windows do GitHub e guarda capturas de tela.
+on:
+  workflow_dispatch:
+
+jobs:
+  capturas:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Publicar EXE
+        run: >
+          dotnet publish src/PtzStudio.App/PtzStudio.App.csproj -c Release -r win-x64
+          --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish
+      - name: Abrir o programa e capturar a tela
+        shell: powershell
+        run: ./tools/captura-tela.ps1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Capturas-de-tela
+          path: capturas/**
