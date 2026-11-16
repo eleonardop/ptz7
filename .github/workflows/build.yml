@@ -31,16 +31,21 @@ jobs:
           --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true
           -o publish
 
-      - name: Conferir o componente de video (libvlc)
+      - name: Garantir o componente de video (libvlc) ao lado do EXE
         shell: pwsh
         run: |
-          $d = 'publish/libvlc'
-          if (Test-Path $d) {
-            $mb = (Get-ChildItem $d -Recurse -File | Measure-Object Length -Sum).Sum / 1MB
-            Write-Host ("Pasta libvlc incluida na publicacao: {0:N0} MB" -f $mb)
-          } else {
-            Write-Warning "A pasta publish/libvlc nao foi gerada: o video ao vivo ficara indisponivel."
+          # A publicacao em arquivo unico embute as DLLs nativas dentro do EXE; o LibVLC precisa delas (e da pasta plugins) soltas em libvlc/win-x64.
+          $dest = 'publish/libvlc/win-x64'
+          if (-not (Test-Path "$dest/libvlc.dll")) {
+            $pkg = Join-Path $env:USERPROFILE '.nuget/packages/videolan.libvlc.windows'
+            $dll = Get-ChildItem $pkg -Recurse -Filter libvlc.dll | Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
+            if (-not $dll) { throw "libvlc.dll nao encontrado no pacote VideoLAN.LibVLC.Windows" }
+            New-Item -ItemType Directory -Force $dest | Out-Null
+            Copy-Item (Join-Path $dll.DirectoryName '*') $dest -Recurse -Force
           }
+          if (-not (Test-Path "$dest/libvlc.dll") -or -not (Test-Path "$dest/plugins")) { throw "libvlc.dll ou a pasta plugins nao esta em $dest" }
+          $mb = (Get-ChildItem 'publish/libvlc' -Recurse -File | Measure-Object Length -Sum).Sum / 1MB
+          Write-Host ("Pasta libvlc incluida na publicacao: {0:N0} MB" -f $mb)
 
       - name: Instalar Inno Setup
         run: choco install innosetup -y --no-progress
