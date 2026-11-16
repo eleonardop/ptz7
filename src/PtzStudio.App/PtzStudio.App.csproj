@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>PtzStudio.App</RootNamespace>
+    <AssemblyName>PTZStudio</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version>1.0.0</Version>
+    <LangVersion>latest</LangVersion>
+    <SatelliteResourceLanguages>pt-BR</SatelliteResourceLanguages>
+    <!-- O componente de vídeo (LibVLC) só é distribuído para 64 bits: evita copiar também a versão de 32 bits (dezenas de MB a mais) -->
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- Menos threads e memória: o coletor de lixo não precisa de thread em segundo plano para um app deste tamanho -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <TieredPGO>false</TieredPGO>
+  </PropertyGroup>
+  <!-- O ícone é opcional: com Assets\app.ico o programa usa o ícone; sem ele, compila e abre normalmente (ícone padrão do Windows) -->
+  <PropertyGroup Condition="Exists('Assets\app.ico')">
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup Condition="Exists('Assets\app.ico')">
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PtzStudio.Core\PtzStudio.Core.csproj" />
+    <PackageReference Include="SharpDX" Version="4.2.0" />
+    <PackageReference Include="SharpDX.DirectInput" Version="4.2.0" />
+    <!-- Vídeo ao vivo (RTSP): LibVLCSharp (código) + LibVLC para Windows (componente nativo, copiado para a pasta libvlc) -->
+    <PackageReference Include="LibVLCSharp" Version="3.9.3" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.21" />
+  </ItemGroup>
+</Project>
