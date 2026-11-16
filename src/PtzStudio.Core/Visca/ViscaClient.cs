@@ -48,6 +48,7 @@ public sealed class ViscaClient : IViscaInquirer, IViscaFeedback, IDisposable
     private DateTime _probeSentUtc;
     private volatile TaskCompletionSource<bool>? _probe;
     private volatile int _failures;
+    private long _lastRxTicks;   // instante (MonoClock) do último datagrama recebido; qualquer resposta prova que a câmera está viva (M1)
     private int _gen;                 // identifica a conexão atual: laços de saúde antigos se encerram sozinhos
     private int _rebuild;             // 1 = pedir ao laço de saúde para recriar o socket
     private int _rebuildCount;
@@ -261,6 +262,7 @@ public sealed class ViscaClient : IViscaInquirer, IViscaFeedback, IDisposable
             probe.TrySetResult(true);
         }
         _failures = 0;
+        Volatile.Write(ref _lastRxTicks, MonoClock.UtcNow.Ticks);
         if (State != ConnectionState.Conectado) SetState(ConnectionState.Conectado, "Câmera respondendo");
         ResponseReceived?.Invoke(resp);
     }
@@ -325,7 +327,10 @@ public sealed class ViscaClient : IViscaInquirer, IViscaFeedback, IDisposable
                 var cfg = _cfg;
                 if (cfg.HealthCheck)
                 {
+                    var probeStart = MonoClock.UtcNow;
                     bool ok = await TestConnectionAsync(Math.Min(Math.Max(100, cfg.TimeoutMs), HealthProbeTimeoutMs)).ConfigureAwait(false);
+                    // Câmera que responde aos comandos mas não à consulta de versão: qualquer datagrama recebido durante a espera conta como vida (M1)
+                    if (!ok && Volatile.Read(ref _lastRxTicks) >= probeStart.Ticks) ok = true;
                     if (gen != Volatile.Read(ref _gen)) return;          // uma conexão mais nova assumiu: este laço é velho
                     if (!ok)
                     {

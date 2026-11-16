@@ -97,7 +97,7 @@ public static class InputInterpreter
         {
             if (i < 0 || i >= s.Axes.Length) return 0;
             double rv = i < rest.Length ? rest[i] : 0;
-            return Math.Clamp(s.Axes[i] - rv, 0, 1);
+            return TriggerAmount(s.Axes[i] - rv, true, rv);   // mesma normalização do caminho dos botões RT/LT (M2)
         }
 
         r.X = Norm(map.PanAxis) * (map.PanAxisReversed ? -1 : 1);
@@ -120,7 +120,7 @@ public sealed class ButtonRouter
     /// Ações de efeito visível que só disparam depois de o botão ficar apertado por HoldMs: um toque acidental não manda a
     /// câmera ao Home nem sobrescreve um preset. As demais ações disparam na hora.
     /// </summary>
-    public static readonly HashSet<ButtonAction> HoldToConfirm = new() { ButtonAction.Home, ButtonAction.SalvarPreset };
+    public static readonly HashSet<ButtonAction> HoldToConfirm = new() { ButtonAction.Home, ButtonAction.SalvarPreset, ButtonAction.AlternarPerfil };
 
     private HashSet<(int, int, ButtonAction)> _prevActive = new();
     private readonly Dictionary<(int, int, ButtonAction), DateTime> _holdSince = new();

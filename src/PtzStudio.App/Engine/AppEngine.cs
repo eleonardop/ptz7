@@ -61,6 +61,7 @@ public sealed class AppEngine : IDisposable
     private DateTime _detectStartedUtc = DateTime.MinValue;
     private HashSet<int> _detectBaseline = new();
     private double[]? _detectAxisBase;
+    private readonly object _pendLock = new();   // protege _pendingSave/_pendingSock: o ciclo da tela e a thread de rede acessam os dois (M5)
     private (int slot, DateTime when)? _pendingSave;
     private int _pendingSock = -1;
     private readonly object _issueLock = new();
@@ -127,14 +128,19 @@ public sealed class AppEngine : IDisposable
         };
         Client.ResponseReceived += r =>
         {
-            if (_pendingSave is not { } ps || (MonoClock.UtcNow - ps.when).TotalSeconds >= 3) return;
-            // Só confirma se a CONCLUSÃO vier do mesmo "socket" VISCA que o ACK do comando de gravar (evita confundir
-            // com a conclusão de um zoom/foco qualquer).
-            int sock = r.Payload.Length >= 2 ? r.Payload[1] & 0x0F : -1;
-            if (r.Kind == ViscaResponseKind.Ack) { if (_pendingSock < 0) _pendingSock = sock; return; }
-            if (r.Kind == ViscaResponseKind.Conclusao && _pendingSock >= 0 && sock == _pendingSock)
+            (int slot, DateTime when) ps;
+            lock (_pendLock)
             {
+                if (_pendingSave is not { } p0 || (MonoClock.UtcNow - p0.when).TotalSeconds >= 3) return;
+                ps = p0;
+                // Só confirma se a CONCLUSÃO vier do mesmo "socket" VISCA que o ACK do comando de gravar (evita confundir
+                // com a conclusão de um zoom/foco qualquer).
+                int sock = r.Payload.Length >= 2 ? r.Payload[1] & 0x0F : -1;
+                if (r.Kind == ViscaResponseKind.Ack) { if (_pendingSock < 0) _pendingSock = sock; return; }
+                if (!(r.Kind == ViscaResponseKind.Conclusao && _pendingSock >= 0 && sock == _pendingSock)) return;
                 _pendingSave = null;
+            }
+            {
                 Application.Current?.Dispatcher.BeginInvoke(() =>
                 {
                     var e = Settings.Presets.FirstOrDefault(x => x.CameraId == Camera.Id && x.Slot == ps.slot);
@@ -410,8 +416,7 @@ public sealed class AppEngine : IDisposable
         else if (name != null) e.Name = name;
         e.ConfirmedOnCamera = false;
         e.SentAt = DateTime.Now;
-        _pendingSock = -1;
-        _pendingSave = (slot, MonoClock.UtcNow);
+        lock (_pendLock) { _pendingSock = -1; _pendingSave = (slot, MonoClock.UtcNow); }
         Save();
         Notice?.Invoke($"Comando de gravar preset {slot} enviado; aguardando confirmação da câmera.");
     }
@@ -487,6 +492,7 @@ public sealed class AppEngine : IDisposable
         Microsoft.Win32.SystemEvents.PowerModeChanged -= OnPowerModeChanged;
         _guardian?.Dispose();
         try { Controller.StopAll("encerrando o programa"); } catch { }
+        try { Controller.ForceStopOutOfBand("encerrando o programa"); } catch { }   // segunda rodada de parada, fora da trava (B2)
         _dirty = true;   // sempre grava ao sair
         Flush();
         Client.Dispose();
