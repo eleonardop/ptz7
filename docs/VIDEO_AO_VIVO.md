@@ -27,7 +27,7 @@ Na aba **Controle PTZ**, no cartão **VÍDEO AO VIVO**, no topo da coluna da dir
 
 ## O que NÃO foi testado (depende da câmera, do PC e do Windows)
 - Se a LJ510-30X-N tem ONVIF, qual é o endereço RTSP dela e se oferece stream secundário.
-- Reprodução real (H.264/H.265), atraso, uso de CPU e memória, tela cheia e reconexão, principalmente no Windows 7 (o .NET 8 não é oficialmente suportado nele).
+- Reprodução real (H.264/H.265), atraso, uso de CPU e memória, tela cheia e reconexão, principalmente no Windows 7 (o .NET 10 não é suportado nele).
 - Se a pasta `libvlc` entra na publicação do GitHub Actions como esperado (o workflow avisa se não entrar).
 
 ## Testes automatizados (rodam no GitHub Actions)

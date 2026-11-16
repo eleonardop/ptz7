@@ -13,13 +13,17 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Restaurar
         run: dotnet restore PtzStudio.sln
 
       - name: Testes automatizados da lógica
-        run: dotnet test tests/PtzStudio.Core.Tests/PtzStudio.Core.Tests.csproj -c Release
+        run: dotnet test tests/PtzStudio.Core.Tests/PtzStudio.Core.Tests.csproj -c Release --logger "trx;LogFileName=testes.trx" --results-directory TestResults
+
+      - name: Pacotes com vulnerabilidade conhecida (informativo)
+        continue-on-error: true
+        run: dotnet list PtzStudio.sln package --vulnerable --include-transitive
 
       - name: Publicar EXE (sem exigir .NET instalado)
         run: >
@@ -43,6 +47,12 @@ jobs:
 
       - name: Gerar instalador
         run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\PtzStudio.iss'
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Resultado-dos-testes
+          path: TestResults/**
 
       - uses: actions/upload-artifact@v4
         with:
