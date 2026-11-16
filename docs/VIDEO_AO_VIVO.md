@@ -1,7 +1,7 @@
 # Vídeo ao vivo no Controle PTZ
 
 ## Onde fica
-Na aba **Controle PTZ**, no cartão **VÍDEO AO VIVO**, no topo da coluna da direita. Os demais cartões continuam onde estavam; o antigo cartão "Entrada ativa" virou o cartão informativo "Entradas" (o controle físico e o joystick virtual agora funcionam ao mesmo tempo) e fica no fim da coluna. Os presets rápidos saíram deste cartão e agora ficam na barra fixa de presets, abaixo do cabeçalho da janela, visível em todas as abas; o botão Home passou a pedir que seja segurado por meio segundo. Não existe aba nova.
+Na aba **Controle PTZ**, no cartão **VÍDEO AO VIVO**, à esquerda, ocupando a maior parte da tela. A imagem acompanha o tamanho da janela, sempre em 16:9. Embaixo dele ficam os presets e o Home; os controles (velocidade, joystick virtual, zoom, foco, brilho e exposição) ficam à direita. Não existe aba nova.
 
 ## Como usar
 1. Clique em **Ajustes** (no cartão) e informe, se necessário, **usuário** e **senha** da câmera.
@@ -10,7 +10,7 @@ Na aba **Controle PTZ**, no cartão **VÍDEO AO VIVO**, no topo da coluna da dir
 3. Clique em **Ligar**. Duplo clique no vídeo (ou o botão **Tela cheia**) abre em tela cheia; **Esc**, **F11** ou duplo clique fecham.
 
 ## Como funciona
-- **Prévia leve:** o cartão usa o stream secundário (menor resolução) quando existir; caso contrário, reduz a imagem do principal para no máximo 640×360 antes de entregá-la à tela. Em **Ajustes > Qualidade da prévia** dá para escolher o principal.
+- **Prévia leve:** o cartão usa o stream secundário (menor resolução) quando existir; caso contrário, reduz a imagem do principal antes de entregá-la à tela: no máximo 640×360 com o vídeo pequeno, ou 960×540 quando o vídeo está grande na tela (para não ficar borrado). A imagem nunca é aumentada além do que a câmera envia; trocar de tamanho reinicia o vídeo por um instante. Em **Ajustes > Qualidade da prévia** dá para escolher o principal.
 - **Tela cheia:** usa o stream principal (se houver), limitado a 1280×720.
 - **H.264 e H.265:** a decodificação é feita pelo LibVLC. Por padrão **sem** aceleração pela placa de vídeo (é mais estável em drivers antigos e no Windows 7); em Ajustes há a opção "Usar decodificação pela placa de vídeo", que reduz a CPU mas pode ser menos estável. Se um formato não puder ser decodificado no computador, o cartão mostra "Sem imagem da câmera".
 - **Sem som:** o áudio da câmera nunca toca no computador.
@@ -28,7 +28,7 @@ Na aba **Controle PTZ**, no cartão **VÍDEO AO VIVO**, no topo da coluna da dir
 ## O que NÃO foi testado (depende da câmera, do PC e do Windows)
 - Se a LJ510-30X-N tem ONVIF, qual é o endereço RTSP dela e se oferece stream secundário.
 - Reprodução real (H.264/H.265), atraso, uso de CPU e memória, tela cheia e reconexão, principalmente no Windows 7 (o .NET 10 não é suportado nele).
-- Se a pasta `libvlc` entra na publicação do GitHub Actions como esperado (o workflow avisa se não entrar).
+- Se o vídeo grande (960×540) atrasa os comandos no seu computador: confira em **Diagnóstico > Ciclo de controle** o maior intervalo com o vídeo ligado.
 
 ## Testes automatizados (rodam no GitHub Actions)
 `VideoAndOnvifTests`: validação e senha dos endereços RTSP, configurações antigas sem os campos novos, leitura ONVIF com uma câmera simulada (perfis, endereços, escolha de principal e prévia, login só quando há senha), cabeçalho de segurança, falhas, e teste de caminhos RTSP em loopback.

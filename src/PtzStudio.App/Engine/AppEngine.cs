@@ -50,6 +50,13 @@ public sealed class AppEngine : IDisposable
     // Prioridade Normal: o padrão do DispatcherTimer (Background) perde para mouse e desenho da tela, o que atrasaria comandos e PARADAS.
     private readonly DispatcherTimer _timer = new(DispatcherPriority.Normal) { Interval = TimeSpan.FromMilliseconds(16) };
     private DateTime _lastTick = MonoClock.UtcNow;
+    private readonly DateTime _loopStart = MonoClock.UtcNow;
+    private DateTime _loopWinStart = MonoClock.UtcNow;
+    private double _loopWinMax, _loopPrevMax;
+    /// <summary>Maior intervalo (ms) entre dois ciclos de controle desde a abertura do programa (o normal é perto do intervalo do ciclo).</summary>
+    public double LoopMaxMs { get; private set; }
+    /// <summary>Maior intervalo (ms) entre dois ciclos de controle nos últimos 10 a 20 segundos.</summary>
+    public double LoopRecentMaxMs => Math.Max(_loopWinMax, _loopPrevMax);
     private readonly RestTracker _rest = new();
     private string _restDevice = "";
     private bool _restWarned;
@@ -262,8 +269,13 @@ public sealed class AppEngine : IDisposable
     private void Tick()
     {
         var now = MonoClock.UtcNow;
+        double gapMs = (now - _lastTick).TotalMilliseconds;
         double dt = Math.Clamp((now - _lastTick).TotalSeconds, 0.001, 0.1);
         _lastTick = now;
+        // Medição do atraso do ciclo de controle (aba Diagnóstico): maior intervalo entre dois ciclos nos últimos ~10 s e desde a abertura.
+        if (gapMs > _loopWinMax) _loopWinMax = gapMs;
+        if (gapMs > LoopMaxMs && (now - _loopStart).TotalSeconds > 5) LoopMaxMs = gapMs;      // ignora a abertura do programa
+        if ((now - _loopWinStart).TotalSeconds >= 10) { _loopPrevMax = _loopWinMax; _loopWinMax = 0; _loopWinStart = now; }
 
         var snap = Pad.Poll();
         if (snap != null)

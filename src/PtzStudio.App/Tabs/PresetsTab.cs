@@ -87,7 +87,7 @@ internal sealed class PresetsTab : TabBase
                     Ux.Btn("Subir", () => Move(-1), 90), Ux.Btn("Descer", () => Move(1), 90),
                     Ux.Btn("Excluir", Delete, 110),
                     Ux.Btn("Atribuir a um botão físico…", AssignButton, 250)),
-                Ux.Text("Ao gravar, a posição fica na MEMÓRIA DA CÂMERA; o computador guarda só o nome e a ordem. Só aparece “confirmado” quando a câmera responde que concluiu o comando. Os presets aparecem na barra fixa no topo da janela.", 13, false, Ux.Muted)));
+                Ux.Text("Ao gravar, a posição fica na MEMÓRIA DA CÂMERA; o computador guarda só o nome e a ordem. Só aparece “confirmado” quando a câmera responde que concluiu o comando. Os presets aparecem na aba Controle PTZ, embaixo do vídeo.", 13, false, Ux.Muted)));
 
         var page = new StackPanel();
         page.Children.Add(Ux.Header("Presets", "Câmera: " + E.Camera.Name));

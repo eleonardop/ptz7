@@ -14,7 +14,7 @@
 ## Cabeçalho (sempre visível)
 Mostra o estado da câmera, do controle, o perfil e quem está no comando agora: **Controle**, **Mouse** ou **Controle + mouse** (nenhum dos dois em uso, ambos disponíveis).
 
-Abaixo do cabeçalho ficam duas áreas que acompanham você em qualquer aba: a **faixa de alerta** (só aparece quando há um problema que precisa de atenção) e a **barra de presets**.
+Abaixo do cabeçalho fica a **faixa de alerta**, que acompanha você em qualquer aba (só aparece quando há um problema que precisa de atenção).
 
 ## Controle físico e joystick virtual ao mesmo tempo
 O GameSir e o joystick virtual da tela (arrastado com o mouse) comandam a câmera **ao mesmo tempo**. Não existe mais botão, função nem opção para alternar entre eles.
@@ -22,7 +22,7 @@ O GameSir e o joystick virtual da tela (arrastado com o mouse) comandam a câmer
 - Uma pequena folga do analógico em repouso (dentro da zona morta do perfil) não conta como uso e não impede o mouse de assumir.
 - **Clicar no joystick virtual (ou nos botões de zoom da tela) sempre retoma o comando**, mesmo que o controle físico esteja inclinado ou travado: nesse caso o controle físico é ignorado até voltar ao centro.
 - O botão do GameSir e as funções dele (presets, Home, foco, brilho etc.) funcionam como sempre, a qualquer momento.
-- O programa não move o cursor do Windows com os analógicos: o "mouse" aqui é o joystick virtual da tela. O cartão **Entradas**, na aba Controle PTZ, mostra quem está no comando.
+- O programa não move o cursor do Windows com os analógicos: o "mouse" aqui é o joystick virtual da tela. A linha **No comando agora**, embaixo do joystick virtual na aba Controle PTZ, mostra quem está no comando.
 - Perfis e configurações antigas continuam valendo: a função "Alternar joystick físico/virtual", que deixou de existir, é removida das atribuições ao abrir o programa (o botão View, que a usava por padrão, fica livre para outra função).
 
 ## Parar a câmera
@@ -40,11 +40,24 @@ Se a câmera deixa de responder, o programa tenta recuperar a conexão sozinho. 
 ## Faixa de alerta
 Uma faixa fixa abaixo do cabeçalho, que **não some sozinha**, avisa (nesta ordem de prioridade): detecção de botão ou eixo ativa; câmera sem resposta ou conectando; controle diferente do mapeado; parada de segurança aguardando o centro; problema ao ler as configurações ao abrir o programa; **endereço, porta ou protocolo da câmera alterados e ainda não aplicados** (botão “Aplicar e reconectar”); **erro inesperado** do programa (botão “Entendi”; não abre mais janela que trava o trabalho). Quando existe uma ação útil, ela vem como botão na própria faixa.
 
-## Barra de presets
-Os presets da câmera ativa ficam numa barra fixa abaixo do cabeçalho, visíveis em qualquer aba e sem rolar a tela. Um clique aciona o preset. A ordem e os nomes são os da aba Presets.
+## Tela Controle PTZ
+A tela foi organizada para operar sem rolar:
+- **Esquerda:** o **vídeo ao vivo**, grande, com os botões Ligar/Desligar, Tela cheia e Ajustes embaixo. Os campos de endereço RTSP, usuário e senha só aparecem ao clicar em **Ajustes**.
+- **Embaixo do vídeo:** os **presets** da câmera ativa e o botão **Home**. Um clique aciona o preset. A ordem e os nomes são os da aba Presets. A antiga barra de presets no topo da janela deixou de existir: os presets agora ficam só nesta tela.
+- **Direita, no topo:** **Velocidade Pan/Tilt** e **Intensidade do zoom**.
+- **Direita:** o **joystick virtual** e, ao lado dele, **Zoom**, **Foco** e **Brilho e exposição**, em botões compactos.
+- Se a janela for baixa demais, o cartão **Brilho e exposição** se recolhe sozinho (a seta ao lado do título abre e fecha). Se a janela for estreita demais, os controles descem para baixo do vídeo.
+- Várias explicações que antes ocupavam espaço na tela agora aparecem ao **parar o mouse** sobre o controle.
+
+## Setas de direção no joystick virtual
+Em volta do botão azul do joystick virtual há **8 setas** (cima, baixo, esquerda, direita e as quatro diagonais).
+- **Segure** uma seta com o mouse: a câmera anda naquela direção. **Solte**: a câmera para na hora.
+- A velocidade é a do controle **Velocidade Pan/Tilt** do perfil ativo (a seta equivale ao analógico no máximo). Nas diagonais, Pan e Tilt andam juntos nessa velocidade.
+- A câmera também para se o mouse **sair de cima da seta** com o botão apertado, ou se você trocar de janela ou de aba.
+- Arrastar o botão azul do centro continua funcionando como antes: qualquer direção, com velocidade proporcional ao quanto você arrasta. O arraste começa no círculo do centro.
 
 ## Home e Salvar preset: segurar o botão
-Para evitar toque acidental, **Home** e **Salvar preset** só são executados depois de **segurar o botão por meio segundo**. Vale para o botão do controle (a barra inferior mostra “Segure para…” com o andamento) e para o botão **Posição inicial (Home)** da aba Controle PTZ. Acionar preset, parar, foco e as demais funções continuam instantâneos.
+Para evitar toque acidental, **Home** e **Salvar preset** só são executados depois de **segurar o botão por meio segundo**. Vale para o botão do controle (a barra inferior mostra “Segure para…” com o andamento) e para o botão **Home** da aba Controle PTZ (no fim da linha de presets). Acionar preset, parar, foco e as demais funções continuam instantâneos.
 
 ## Velocidade Pan/Tilt e Zoom (aba Controle PTZ)
 - **Velocidade Pan/Tilt:** controle deslizante contínuo de **1% a 100%**, valendo para o joystick físico e para o virtual. Cada **perfil guarda a sua própria velocidade**; ao trocar de perfil o controle se atualiza. A tela mostra a velocidade real enviada à câmera (a câmera só tem 24 passos de Pan e 20 de Tilt, e 1% sempre equivale ao passo mais lento).

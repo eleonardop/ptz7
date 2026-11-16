@@ -86,6 +86,7 @@ internal sealed class DiagnosticsTab : TabBase
             $"Comandos: {Acks()}",
             $"Foco: {FocusText()}",
             $"Tempo de abertura: {E.StartupMs:0} ms",
+            $"Ciclo de controle: maior intervalo recente {E.LoopRecentMaxMs:0} ms; maior desde a abertura {E.LoopMaxMs:0} ms",
             $"Imagem: brilho {Sup(E.Image.Brilho.Support)}; exposição {Sup(E.Image.Exposicao.Support)}",
             "Últimos erros:"
         };
@@ -122,7 +123,9 @@ internal sealed class DiagnosticsTab : TabBase
                     $"Comandos: {Acks()}\n" +
                     $"Foco: {FocusText()}\n" +
                     $"Enviado agora: Pan {E.Controller.SentPan}  Tilt {E.Controller.SentTilt}  Zoom {E.Controller.SentZoom}";
-        _prog.Text = $"Tempo de abertura (até a primeira tela): {E.StartupMs:0} ms\nAjustes de imagem: brilho {Sup(E.Image.Brilho.Support)} · exposição {Sup(E.Image.Exposicao.Support)}";
+        _prog.Text = $"Tempo de abertura (até a primeira tela): {E.StartupMs:0} ms\nAjustes de imagem: brilho {Sup(E.Image.Brilho.Support)} · exposição {Sup(E.Image.Exposicao.Support)}\n" +
+                     $"Ciclo de controle: maior intervalo nos últimos segundos {E.LoopRecentMaxMs:0} ms · maior desde a abertura {E.LoopMaxMs:0} ms " +
+                     "(se passar muito de 100 ms com o vídeo ligado, o vídeo está atrasando os comandos)";
 
         var iss = E.RecentIssues;
         string text = iss.Count == 0 ? "Nenhum erro registrado." : string.Join("\n", iss.Reverse());

@@ -13,8 +13,8 @@ using PtzStudio.Core.Visca;
 namespace PtzStudio.App;
 
 /// <summary>
-/// Janela principal: cabeçalho fixo (status, perfil, quem comanda), faixa de alerta persistente, barra fixa de presets e
-/// navegação lateral. As abas só são criadas quando abertas.
+/// Janela principal: cabeçalho fixo (status, perfil, quem comanda), faixa de alerta persistente e navegação lateral.
+/// As abas só são criadas quando abertas. Os presets rápidos ficam dentro da aba Controle PTZ, embaixo do vídeo.
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -35,14 +35,11 @@ public partial class MainWindow : Window
     private ConnectionState _wasCam = ConnectionState.Desconectado;
     private string _lastTip = "";
 
-    // faixa de alerta persistente (não some sozinha) e barra fixa de presets
+    // faixa de alerta persistente (não some sozinha)
     private readonly Border _alert = new() { Visibility = Visibility.Collapsed, Padding = new Thickness(16, 8, 16, 8) };
     private readonly TextBlock _alertText = new() { FontSize = 15, FontWeight = FontWeights.SemiBold, Foreground = Ux.TextBrush, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
     private readonly Button _alertBtn = new() { MinHeight = 36, MinWidth = 140, Padding = new Thickness(14, 4, 14, 4), Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
     private Action? _alertAction;
-    private readonly Border _presetBar = new() { Visibility = Visibility.Collapsed, Background = Ux.PanelBg, BorderBrush = Ux.Edge, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(16, 6, 16, 6) };
-    private readonly WrapPanel _presetPanel = new() { VerticalAlignment = VerticalAlignment.Center };
-    private string _presetSig = "\u0001";
 
     public MainWindow()
     {
@@ -130,14 +127,6 @@ public partial class MainWindow : Window
         _alert.Child = alertRow;
         _alertBtn.Click += (_, _) => _alertAction?.Invoke();
 
-        // barra fixa de presets: sempre visível, em qualquer aba, sem rolar
-        var presetRow = new DockPanel();
-        var presetLabel = new TextBlock { Text = "PRESETS", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = Ux.Muted, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 14, 0) };
-        DockPanel.SetDock(presetLabel, Dock.Left);
-        presetRow.Children.Add(presetLabel);
-        presetRow.Children.Add(_presetPanel);
-        _presetBar.Child = presetRow;
-
         var statusStrip = new Border
         {
             Background = Ux.PanelBg, BorderBrush = Ux.Edge, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(16, 3, 16, 3), Child = _notice
@@ -146,11 +135,9 @@ public partial class MainWindow : Window
         var root = new DockPanel();
         DockPanel.SetDock(headerBar, Dock.Top);
         DockPanel.SetDock(_alert, Dock.Top);
-        DockPanel.SetDock(_presetBar, Dock.Top);
         DockPanel.SetDock(statusStrip, Dock.Bottom);
         root.Children.Add(headerBar);
         root.Children.Add(_alert);
-        root.Children.Add(_presetBar);
         root.Children.Add(statusStrip);
         root.Children.Add(tabs);
         Content = root;
@@ -214,7 +201,6 @@ public partial class MainWindow : Window
         {
             try { t.Rebuild(); } catch { }
         }
-        _presetSig = "\u0001";   // refaz a barra de presets
     }
 
     // ---------------- faixa de alerta ----------------
@@ -258,28 +244,6 @@ public partial class MainWindow : Window
         else SetAlert(null, null, null, false);
     }
 
-    // ---------------- barra fixa de presets ----------------
-    private void UpdatePresetBar()
-    {
-        var list = _engine.Settings.Presets.Where(p => p.CameraId == _engine.Camera.Id).ToList();
-        string sig = _engine.Camera.Id + "|" + string.Join("|", list.Select(p => p.Slot + ":" + p.Name));
-        if (sig == _presetSig) return;
-        _presetSig = sig;
-        _presetPanel.Children.Clear();
-        _presetBar.Visibility = list.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
-        foreach (var p in list)
-        {
-            int slot = p.Slot;
-            var face = new StackPanel();
-            face.Children.Add(new TextBlock { Text = slot.ToString(), FontSize = 20, FontWeight = FontWeights.Bold, Foreground = Ux.AccentLight });
-            face.Children.Add(new TextBlock { Text = p.Name, FontSize = 11, Foreground = Ux.Muted, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 110 });
-            var btn = new Button { Content = face, MinHeight = 54, MinWidth = 96, Margin = new Thickness(3), HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(12, 4, 10, 4) };
-            btn.Click += (_, _) => _engine.Execute(ButtonAction.AcionarPreset, slot);
-            btn.ToolTip = p.ConfirmedOnCamera ? "Gravado na memória da câmera" : "Gravação ainda sem confirmação da câmera";
-            _presetPanel.Children.Add(btn);
-        }
-    }
-
     private void UpdateStatus()
     {
         var st = _engine.Client.State;
@@ -305,7 +269,6 @@ public partial class MainWindow : Window
         _source.Foreground = Ux.AccentLight;
 
         UpdateAlert(st);
-        UpdatePresetBar();
 
         if (_lastNotice.Length > 0 && (DateTime.UtcNow.Ticks - Interlocked.Read(ref _noticeTicks)) > TimeSpan.FromSeconds(8).Ticks) _lastNotice = "";
         var holding = _engine.Router.HoldingAction;

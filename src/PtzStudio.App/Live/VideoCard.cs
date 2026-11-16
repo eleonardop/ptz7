@@ -20,8 +20,39 @@ internal sealed class VideoCard
     private Border _stage = new();
     private TextBox _tbMain = new(), _tbSub = new();
     private bool _busy;
+    private double _maxStageHeight = double.PositiveInfinity;
 
     public VideoCard(AppEngine e) { _e = e; }
+
+    /// <summary>Verdadeiro enquanto os campos de Ajustes (endereço RTSP etc.) estão abertos.</summary>
+    public bool SettingsOpen => _settings.Visibility == Visibility.Visible;
+
+    /// <summary>Altura atual da imagem (a aba usa para saber quanto sobra de tela).</summary>
+    public double StageHeight => _stage.ActualHeight;
+
+    /// <summary>Limite de altura da imagem, para o vídeo e os presets caberem na tela sem rolar. A imagem continua em 16:9.</summary>
+    public void SetMaxStageHeight(double h)
+    {
+        h = Math.Max(150, h);
+        if (Math.Abs(h - _maxStageHeight) < 1) return;
+        _maxStageHeight = h;
+        FitStage();
+    }
+
+    /// <summary>A imagem ocupa a largura do cartão em 16:9; se isso passar do limite de altura, fica mais baixa (com faixas pretas nos lados).</summary>
+    private void FitStage()
+    {
+        double w = _stage.ActualWidth;
+        if (w <= 0) return;
+        double h = Math.Round(Math.Min(w * 9.0 / 16.0, _maxStageHeight));
+        if (Math.Abs(_stage.Height - h) >= 1 || double.IsNaN(_stage.Height)) _stage.Height = h;
+
+        // Imagem grande na tela: decodifica a prévia em tamanho maior, para não ficar borrada (troca com folga, para não reiniciar o vídeo a toda hora).
+        double px = w * VisualTreeHelper.GetDpi(_stage).DpiScaleX;
+        var v = LiveVideo.Instance;
+        if (!v.PreviewLarge && px > 860) v.PreviewLarge = true;
+        else if (v.PreviewLarge && px < 760) v.PreviewLarge = false;
+    }
 
     public UIElement Build()
     {
@@ -38,16 +69,21 @@ internal sealed class VideoCard
         grid.Children.Add(_overlayBox);
         _stage = new Border
         {
-            Background = Brushes.Black, CornerRadius = new CornerRadius(8), Height = 176, ClipToBounds = true,
-            Child = grid, Margin = new Thickness(0, 0, 0, 8)
+            Background = Brushes.Black, CornerRadius = new CornerRadius(8), Height = 200, ClipToBounds = true,
+            Child = grid, Margin = new Thickness(0, 0, 0, 6),
+            ToolTip = "Duplo clique no vídeo = tela cheia. Os comandos de Pan, Tilt e Zoom continuam funcionando normalmente."
         };
         _stage.MouseLeftButtonDown += (_, ev) => { if (ev.ClickCount == 2) OpenFullscreen(); };
+        _stage.SizeChanged += (_, ev) => { if (ev.WidthChanged) FitStage(); };
 
         // ---- botões ----
         _toggle = Ux.Btn("Ligar", Toggle, 80);
         var fs = Ux.Btn("Tela cheia", OpenFullscreen, 80);
         var cfg = Ux.Btn("Ajustes", () =>
             _settings.Visibility = _settings.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible, 80);
+        cfg.ToolTip = "Endereço RTSP, usuário, senha e qualidade do vídeo";
+        foreach (var b in new[] { _toggle, fs, cfg }) { b.MinHeight = 36; b.FontSize = 14; b.Margin = new Thickness(0, 2, 8, 2); }
+        _settings.Children.Clear();     // a tela pode ser reconstruída: os campos são recriados
 
         // ---- ajustes ----
         void Label(string t) => _settings.Children.Add(Ux.Text(t, 12, false, Ux.Muted));
@@ -94,8 +130,7 @@ internal sealed class VideoCard
             _stage,
             Ux.Wrap(_toggle, fs, cfg),
             _msg,
-            _settings,
-            Ux.Text("Duplo clique no vídeo = tela cheia. Os comandos de Pan, Tilt e Zoom continuam funcionando normalmente.", 12, false, Ux.Muted));
+            _settings);
     }
 
     private void Toggle()

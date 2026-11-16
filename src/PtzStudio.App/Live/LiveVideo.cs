@@ -79,6 +79,12 @@ internal sealed class LiveVideo
     /// <summary>Verdadeiro enquanto a janela de tela cheia estiver aberta (usa o fluxo principal e imagem maior).</summary>
     public bool FullscreenActive { get => _fullscreen; set => _fullscreen = value; }
 
+    /// <summary>
+    /// Verdadeiro quando a imagem do Controle PTZ está grande na tela: a prévia passa a ser decodificada em até 960×540 em vez de
+    /// 640×360 (senão ficaria borrada). Nunca aumenta o vídeo além do tamanho que a câmera envia.
+    /// </summary>
+    public bool PreviewLarge { get; set; }
+
     public bool IsLive
     {
         get
@@ -113,7 +119,8 @@ internal sealed class LiveVideo
         if (!RtspAddress.IsValid(url)) { _status = "Endereço RTSP inválido. Use o formato rtsp://192.168.1.100/1"; return Off; }
         url = RtspAddress.WithCredentials(url, cam.RtspUser, cam.RtspPassword);
         int cache = cam.VideoLowLatency ? 120 : 300;      // menos atraso ajuda a enquadrar à mão; mais cache aguenta melhor uma rede ruim
-        return _fullscreen ? new Want(url, 1280, 720, cam.VideoHardwareDecode, cache) : new Want(url, 640, 360, cam.VideoHardwareDecode, cache);
+        if (_fullscreen) return new Want(url, 1280, 720, cam.VideoHardwareDecode, cache);
+        return PreviewLarge ? new Want(url, 960, 540, cam.VideoHardwareDecode, cache) : new Want(url, 640, 360, cam.VideoHardwareDecode, cache);
     }
 
     // ---------------- cópia dos quadros para a tela (prioridade baixa) ----------------
