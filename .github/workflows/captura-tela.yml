@@ -1,8 +1,11 @@
 name: Capturas de tela (conferir a aparencia)
 
-# Roda so quando pedido (aba Actions > Run workflow). Compila o programa, abre no Windows do GitHub e guarda capturas de tela.
+# Roda quando pedido (aba Actions > Run workflow) e em ramos de trabalho (nunca no main). Compila o programa, abre no Windows
+# do GitHub e guarda capturas de tela.
 on:
   workflow_dispatch:
+  push:
+    branches-ignore: [ main, master ]
 
 jobs:
   capturas:
