@@ -202,6 +202,8 @@ public sealed class AppSettings
     public bool MinimizeToTray { get; set; } = true;
     /// <summary>O botão fechar (X) esconde a janela na bandeja em vez de encerrar, para não fechar sem querer durante a transmissão.</summary>
     public bool CloseToTray { get; set; } = true;
+    /// <summary>Último repouso válido dos eixos de cada controle (VID:PID). Serve de comparação já na primeira conexão ao abrir o programa.</summary>
+    public Dictionary<string, double[]> RestByDevice { get; set; } = new();
 
     /// <summary>Ajustes de movimento de fábrica de um perfil (pelo nome; se não existir, os do perfil "Igreja"). Usado por "Restaurar padrões".</summary>
     public static MotionSettings DefaultMotionFor(string profileName)

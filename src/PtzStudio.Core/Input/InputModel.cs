@@ -253,6 +253,12 @@ public sealed class RestTracker
     /// <summary>Esquece também o repouso anterior (outro controle foi conectado: os valores não são comparáveis).</summary>
     public void ForgetHistory() { Reset(); _lastGood = null; }
 
+    /// <summary>Repouso guardado deste controle (de uma abertura anterior do programa). Valores inválidos são ignorados.</summary>
+    public void SetHistory(double[]? saved)
+    {
+        if (saved != null && saved.Length == 8 && saved.All(v => v >= 0 && v <= 1)) _lastGood = (double[])saved.Clone();
+    }
+
     private static double MaxDiff(double[] a, double[] b)
     {
         double m = 0;

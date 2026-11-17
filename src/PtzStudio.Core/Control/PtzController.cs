@@ -196,7 +196,9 @@ public sealed class PtzController
             if (physical) _owner = InputSource.Fisico;
             else if (virt) _owner = InputSource.Virtual;
         }
-        return _owner == InputSource.Virtual ? (_vx, _vy, _vz) : (_px, _py, _pz);
+        if (_owner == InputSource.Virtual) return (_vx, _vy, _vz);
+        if (_owner == InputSource.Fisico) return (_px, _py, _pz);
+        return (0, 0, 0);       // ninguém no comando (ex.: físico ainda ignorado depois que o mouse soltou): nada se move
     }
 
     public void Tick(double dt, DateTime now)

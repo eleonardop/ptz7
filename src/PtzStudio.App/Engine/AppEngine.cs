@@ -162,9 +162,17 @@ public sealed class AppEngine : IDisposable
             {
                 // Outro controle: o repouso antigo não serve de comparação. O mesmo controle: o repouso novo é conferido com o anterior.
                 string key = Pad.DeviceKey;
-                if (key != _restDevice) { _rest.ForgetHistory(); _restDevice = key; } else _rest.Reset();
+                if (key != _restDevice)
+                {
+                    _rest.ForgetHistory(); _restDevice = key;
+                    if (key.Length > 0 && Settings.RestByDevice != null && Settings.RestByDevice.TryGetValue(key, out var saved)) _rest.SetHistory(saved);
+                }
+                else _rest.Reset();
                 _restWarned = false;
                 CheckLayoutDevice();
+                // Um eixo fora do centro ao conectar (modo do controle trocado, gatilho no lugar do eixo de zoom) não pode mover a câmera:
+                // só volta a mover depois de passar pelo centro.
+                Controller.SafetyStop("controle conectado");
             }
             Notice?.Invoke(c ? $"Controle conectado: {Pad.Name}" : "Controle desconectado");
         };
@@ -281,8 +289,17 @@ public sealed class AppEngine : IDisposable
         if (snap != null)
         {
             // Enquanto o repouso não está gravado (eixos ainda mexendo), nenhum "botão de eixo" pode disparar: o repouso provisório é a leitura atual.
+            bool wasReady = _rest.Ready;
             bool restReady = _rest.Offer(snap.Axes, now);
             Rest = restReady ? _rest.Rest : (double[])snap.Axes.Clone();
+            if (restReady && !wasReady && _rest.Warning == null && _restDevice.Length > 0)
+            {
+                // guarda o repouso deste controle para comparar na próxima abertura do programa
+                Settings.RestByDevice ??= new();
+                if (!Settings.RestByDevice.TryGetValue(_restDevice, out var old) || old.Length != Rest.Length ||
+                    old.Zip(Rest, (a, b) => Math.Abs(a - b)).Max() > 0.02)
+                { Settings.RestByDevice[_restDevice] = (double[])Rest.Clone(); Save(); }
+            }
             if (restReady && _rest.Warning != null && !_restWarned)
             {
                 _restWarned = true;

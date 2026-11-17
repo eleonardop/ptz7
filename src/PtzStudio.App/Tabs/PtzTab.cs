@@ -123,7 +123,7 @@ internal sealed class PtzTab : TabBase
     {
         var l = new TextBlock { Text = label, FontSize = 14, Foreground = Ux.TextBrush, VerticalAlignment = VerticalAlignment.Center };
         var val = new TextBlock { Text = value.ToString("0\\%"), FontSize = 14, FontWeight = FontWeights.SemiBold, Foreground = Ux.TextBrush, HorizontalAlignment = HorizontalAlignment.Right };
-        var s = new Slider { Minimum = 1, Maximum = 100, Value = Math.Clamp(value, 1, 100), VerticalAlignment = VerticalAlignment.Center, Height = 26 };
+        var s = new Slider { Minimum = 1, Maximum = 100, Value = Math.Clamp(value, 1, 100), VerticalAlignment = VerticalAlignment.Center, Height = 26, Focusable = false };
         s.ValueChanged += (_, e) => { set(e.NewValue); val.Text = e.NewValue.ToString("0\\%"); };
         var top = new Grid();
         top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -210,9 +210,9 @@ internal sealed class PtzTab : TabBase
         var zoom = Card(Ux.V(zoomIn, zoomOut), "ZOOM");
 
         // ================= DIREITA: foco (autofoco com o estado lido da câmera, foco de um toque e foco manual) =================
-        _afBtn = new Button { MinHeight = 34, Padding = new Thickness(4, 2, 4, 2), Margin = new Thickness(0, 0, 3, 6), FontSize = 13, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Stretch };
+        _afBtn = new Button { Focusable = false, MinHeight = 34, Padding = new Thickness(4, 2, 4, 2), Margin = new Thickness(0, 0, 3, 6), FontSize = 13, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Stretch };
         _afBtn.Click += (_, _) => { _ = E.ToggleAutoFocusAsync(); };
-        var onePush = new Button { Content = "Focar agora", MinHeight = 34, Padding = new Thickness(4, 2, 4, 2), Margin = new Thickness(3, 0, 0, 6), FontSize = 13, HorizontalAlignment = HorizontalAlignment.Stretch,
+        var onePush = new Button { Content = "Focar agora", Focusable = false, MinHeight = 34, Padding = new Thickness(4, 2, 4, 2), Margin = new Thickness(3, 0, 0, 6), FontSize = 13, HorizontalAlignment = HorizontalAlignment.Stretch,
                                    ToolTip = "Foco de um toque: a câmera foca uma vez e mantém o foco. O autofoco contínuo é desligado (foco manual)." };
         onePush.Click += (_, _) => { _ = E.Focus.OnePushAsync(); };
         var focusNear = Hold("◀", "Perto", () => E.Controller.SetVirtualFocus(-1), () => E.Controller.SetVirtualFocus(0), 34, 11, 13);
@@ -343,7 +343,7 @@ internal sealed class PtzTab : TabBase
             var face = new StackPanel();
             face.Children.Add(new TextBlock { Text = slot.ToString(), FontSize = 18, FontWeight = FontWeights.Bold, Foreground = Ux.AccentLight, HorizontalAlignment = HorizontalAlignment.Center });
             face.Children.Add(new TextBlock { Text = p.Name, FontSize = 11, Foreground = Ux.Muted, TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Center });
-            var btn = new Button { Content = face, MinHeight = 50, Margin = new Thickness(3), Padding = new Thickness(6, 3, 6, 3) };
+            var btn = new Button { Content = face, MinHeight = 50, Margin = new Thickness(3), Padding = new Thickness(6, 3, 6, 3), Focusable = false };
             btn.Click += (_, _) => E.Execute(ButtonAction.AcionarPreset, slot);
             btn.ToolTip = p.Name + " — " + (p.ConfirmedOnCamera ? "gravado na memória da câmera" : "gravação ainda sem confirmação da câmera");
             _presetPanel.Children.Add(btn);
