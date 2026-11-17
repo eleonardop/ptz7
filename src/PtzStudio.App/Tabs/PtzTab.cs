@@ -193,10 +193,10 @@ internal sealed class PtzTab : TabBase
             if ((x != 0 || y != 0) && E.VirtualX == 0 && E.VirtualY == 0) E.Controller.RequestVirtualControl();
             E.VirtualX = x; E.VirtualY = y;
         };
-        var joyHint = Ux.Text("Arraste o centro ou segure uma seta. Soltou, a câmera para.", 12, false, Ux.Muted);
+        var joyHint = Ux.Text("Arraste o centro ou segure uma seta.", 12, false, Ux.Muted);
         joyHint.Margin = _sent.Margin = _info.Margin = new Thickness(0, 1, 0, 1);
         _afHint.Margin = new Thickness(0, 3, 0, 0);
-        joyHint.ToolTip = "Arrastar o botão azul move em qualquer direção, com velocidade proporcional ao deslocamento. Segurar uma seta move naquela direção na " +
+        joyHint.ToolTip = "Ao soltar, a câmera para. Arrastar o botão azul move em qualquer direção, com velocidade proporcional ao deslocamento. Segurar uma seta move naquela direção na " +
                           "velocidade Pan/Tilt escolhida. Os dois usam a curva e a zona morta do perfil ativo.";
         _info.ToolTip = "O controle físico (GameSir) e o joystick virtual (mouse) funcionam ao mesmo tempo. Se os dois forem usados juntos, quem saiu do centro " +
                         "primeiro mantém o comando até voltar ao centro. As duas entradas nunca se somam.";

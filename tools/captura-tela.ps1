@@ -28,13 +28,20 @@ function Shot([string]$name) {
   $bmp.Save((Join-Path $Out "$name.png"), [System.Drawing.Imaging.ImageFormat]::Png)
   return $bmp
 }
+function IsBlue($bmp, $x, $y) {
+  if ($x -lt 0 -or $y -lt 0 -or $x -ge $bmp.Width -or $y -ge $bmp.Height) { return $false }
+  $c = $bmp.GetPixel($x, $y)
+  return ($c.R -eq 0x3B -and $c.G -eq 0x82 -and $c.B -eq 0xF6)
+}
 function FindKnob($bmp) {
-  # centro do botao azul do joystick virtual (cor de destaque do tema: 3B82F6)
+  # Centro do botao azul do joystick virtual: o unico ponto da cor de destaque (3B82F6) com pelo menos 20 pontos
+  # da mesma cor para cada um dos quatro lados (o logotipo e os controles deslizantes sao menores ou mais finos).
   $sx = 0; $sy = 0; $n = 0
-  for ($y = 0; $y -lt $bmp.Height; $y += 2) { for ($x = 0; $x -lt $bmp.Width; $x += 2) {
-    $c = $bmp.GetPixel($x, $y)
-    if ($c.R -eq 0x3B -and $c.G -eq 0x82 -and $c.B -eq 0xF6) { $sx += $x; $sy += $y; $n++ } } }
-  if ($n -lt 200) { return $null }
+  for ($y = 0; $y -lt $bmp.Height; $y += 3) { for ($x = 0; $x -lt $bmp.Width; $x += 3) {
+    if (-not (IsBlue $bmp $x $y)) { continue }
+    if ((IsBlue $bmp ($x - 20) $y) -and (IsBlue $bmp ($x + 20) $y) -and (IsBlue $bmp $x ($y - 20)) -and (IsBlue $bmp $x ($y + 20)) -and
+        (IsBlue $bmp ($x - 10) $y) -and (IsBlue $bmp ($x + 10) $y) -and (IsBlue $bmp $x ($y - 10)) -and (IsBlue $bmp $x ($y + 10))) { $sx += $x; $sy += $y; $n++ } } }
+  if ($n -lt 5) { return $null }
   return @([int]($sx / $n), [int]($sy / $n), $n)
 }
 
@@ -88,4 +95,26 @@ if ($k) {
 (Shot "12-janela-estreita-1000x700").Dispose()
 
 Stop-Process -Id $p.Id -Force
+Start-Sleep 2
+
+# 5) com 8 presets gravados (configuracao de exemplo so para a captura)
+$dir = Join-Path $env:APPDATA "PtzStudio"
+New-Item -ItemType Directory -Force $dir | Out-Null
+$cam = "11111111-2222-3333-4444-555555555555"
+$names = @("Pulpito", "Coral", "Plano geral", "Batisterio", "Banda", "Plateia", "Entrada", "Telao")
+$presets = @(); for ($i = 0; $i -lt 8; $i++) { $presets += @{ CameraId = $cam; Slot = $i + 1; Name = $names[$i]; ConfirmedOnCamera = $true } }
+$cfg = @{ Cameras = @(@{ Id = $cam; Name = "Camera 1" }); ActiveCameraId = $cam; Presets = $presets }
+[System.IO.File]::WriteAllText((Join-Path $dir "settings.json"), ($cfg | ConvertTo-Json -Depth 6), (New-Object System.Text.UTF8Encoding $false))
+$p = Start-Process $Exe -PassThru
+Start-Sleep 8
+$p.Refresh(); $h = $p.MainWindowHandle
+[W]::SetForegroundWindow($h) | Out-Null
+[W]::MoveWindow($h, 0, 0, 1536, 824, $true) | Out-Null; Start-Sleep 12
+(Shot "13-com-presets-notebook-125pct").Dispose()
+[W]::MoveWindow($h, 0, 0, 1280, 800, $true) | Out-Null; Start-Sleep 3
+(Shot "14-com-presets-1280x800").Dispose()
+[W]::ShowWindow($h, 3) | Out-Null; Start-Sleep 3
+(Shot "15-com-presets-fullhd").Dispose()
+Stop-Process -Id $p.Id -Force
+
 Get-ChildItem $Out | ForEach-Object { Write-Host $_.Name $_.Length }
