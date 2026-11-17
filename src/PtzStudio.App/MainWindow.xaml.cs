@@ -41,6 +41,10 @@ public partial class MainWindow : Window
     private readonly Button _alertBtn = new() { MinHeight = 36, MinWidth = 140, Padding = new Thickness(14, 4, 14, 4), Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
     private Action? _alertAction;
 
+    // caixa de seleção do cabeçalho: minimizar/fechar manda a janela para perto do relógio (ligado) ou não (desligado)
+    private readonly CheckBox _trayCheck = new() { FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 0, 0) };
+    private string _trayCheckShown = "\u0001";
+
     public MainWindow()
     {
         InitializeComponent();
@@ -113,9 +117,24 @@ public partial class MainWindow : Window
         chips.Children.Add(Ux.Chip("people", _profile, "PERFIL"));
         chips.Children.Add(Ux.Chip("input", _source, "NO COMANDO"));
 
+        // Ligado: minimizar e fechar (X) escondem a janela ao lado do relógio. Desligado: minimizar fica na barra de tarefas e o X encerra.
+        _trayCheck.ToolTip = "Marcado: ao minimizar ou fechar (X), a janela some da barra de tarefas e o programa continua funcionando ao lado do relógio.\n" +
+                             "Desmarcado: ao minimizar, o programa continua na barra de tarefas; o X encerra o programa.\n" +
+                             "Para escolher minimizar e fechar separadamente: aba Backup.";
+        _trayCheck.Click += (_, _) =>
+        {
+            bool on = _trayCheck.IsChecked == true;
+            _engine.Settings.MinimizeToTray = _engine.Settings.CloseToTray = on;
+            _engine.Save();
+            UpdateTrayCheck();
+            foreach (var t in _tabs.OfType<BackupTab>()) { try { t.Rebuild(); } catch { } }      // as mesmas opções aparecem na aba Backup
+        };
+
         var header = new DockPanel { Margin = new Thickness(16, 10, 16, 10) };
         DockPanel.SetDock(brand, Dock.Left);
+        DockPanel.SetDock(_trayCheck, Dock.Right);
         header.Children.Add(brand);
+        header.Children.Add(_trayCheck);
         header.Children.Add(chips);
         var headerBar = new Border { Background = Ux.PanelBg, BorderBrush = Ux.Edge, BorderThickness = new Thickness(0, 0, 0, 1), Child = header };
 
@@ -244,8 +263,21 @@ public partial class MainWindow : Window
         else SetAlert(null, null, null, false);
     }
 
+    /// <summary>Mostra na caixa do cabeçalho o que está valendo (as mesmas duas opções também existem, separadas, na aba Backup).</summary>
+    private void UpdateTrayCheck()
+    {
+        bool min = _engine.Settings.MinimizeToTray, close = _engine.Settings.CloseToTray;
+        string sig = min + "|" + close;
+        if (sig == _trayCheckShown) return;
+        _trayCheckShown = sig;
+        _trayCheck.IsChecked = min && close ? true : !min && !close ? false : (bool?)null;
+        _trayCheck.Content = min == close ? "Minimizar e fechar: ir para perto do relógio"
+                           : min ? "Perto do relógio: só ao minimizar" : "Perto do relógio: só ao fechar (X)";
+    }
+
     private void UpdateStatus()
     {
+        UpdateTrayCheck();
         var st = _engine.Client.State;
         (_cam.Text, _cam.Foreground) = st switch
         {

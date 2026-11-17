@@ -122,7 +122,10 @@ O preset é gravado na **memória da câmera** por comando VISCA. O programa só
 - O botão **fechar (X)** também só esconde a janela, para evitar fechar sem querer durante a transmissão. Para sair de verdade: botão direito no ícone > **Sair do PTZ Studio**.
 - Com a janela escondida, o programa avisa por um balão quando a câmera perde a conexão.
 - Abrir o programa de novo enquanto ele está na bandeja apenas traz a janela original (só uma cópia pode controlar a câmera). Isso vale entre usuários e sessões do Windows (acesso remoto, troca rápida de usuário): se a outra cópia estiver em outra sessão, o programa avisa em vez de abrir uma segunda.
-- Para mudar esse comportamento: aba **Backup > Janela e bandeja do Windows**.
+- **Para ligar ou desligar esse modo:** use a caixa de seleção **Minimizar e fechar: ir para perto do relógio**, no canto direito do cabeçalho da janela.
+  - **Marcada** (padrão): minimizar ou fechar (X) esconde a janela e o programa continua ao lado do relógio.
+  - **Desmarcada:** ao minimizar, o programa **continua na barra de tarefas**, como um programa comum; o **X encerra o programa** (e a câmera deixa de ser controlada), então cuidado para não fechar sem querer durante a transmissão.
+- Para escolher minimizar e fechar separadamente (por exemplo, minimizar na barra de tarefas mas o X ir para perto do relógio): aba **Backup > Janela e bandeja do Windows**. Nesse caso a caixa do cabeçalho mostra qual das duas está valendo.
 
 ## Abertura
 O programa abre a janela primeiro e só depois liga o controle e a câmera; as abas são criadas quando você as abre; a procura do controle e o backup automático rodam em segundo plano. A aba **Diagnóstico** mostra o tempo de abertura medido no seu computador.
