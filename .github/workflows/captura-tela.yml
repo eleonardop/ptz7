@@ -7,6 +7,9 @@ on:
   push:
     branches-ignore: [ main, master ]
 
+permissions:
+  contents: write      # para guardar as capturas no ramo "capturas-de-tela"
+
 jobs:
   capturas:
     runs-on: windows-latest
@@ -28,3 +31,16 @@ jobs:
         with:
           name: Capturas-de-tela
           path: capturas/**
+      - name: Guardar as capturas no ramo capturas-de-tela (para ver direto no GitHub)
+        if: always()
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd capturas
+          git init -q -b capturas-de-tela
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "Capturas de tela do commit ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" capturas-de-tela
