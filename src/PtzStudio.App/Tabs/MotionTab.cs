@@ -42,6 +42,12 @@ internal sealed class MotionTab : TabBase
             Ux.Group("Zoom progressivo", Ux.V(
                 new AxisSettingsPanel(m.Zoom, 8, E.Save),
                 Ux.Text("O zoom usa velocidade variável do VISCA (8 níveis). Soltar o controle envia parada imediata, a menos que “Parada suave” esteja marcada.", 13, false, Ux.Muted))),
+            Ux.Group("Reduzir Pan/Tilt com o zoom", Ux.V(
+                Ux.Check("Reduzir a velocidade de Pan/Tilt conforme o zoom fecha", m.ReducePanTiltWithZoom, v => { m.ReducePanTiltWithZoom = v; E.Save(); }),
+                Ux.SliderRow("Velocidade que sobra no zoom máximo (%)", 5, 100, m.ZoomReductionMinPercent, v => { m.ZoomReductionMinPercent = (int)Math.Round(v); E.Save(); }, "0"),
+                Ux.Text("A posição do zoom é lida da própria câmera. Com o zoom aberto a velocidade não muda; a redução cresce aos poucos e chega ao valor acima " +
+                        "no zoom máximo. A mesma opção aparece na aba Controle PTZ. Se a câmera não informar a posição do zoom, nada é reduzido. " +
+                        "O movimento nunca para por causa disso: a câmera tem uma velocidade mínima (1).", 13, false, Ux.Muted))),
             how));
         Ux.WithHeader((ScrollViewer)Content, "Movimento",
             "Curva, zona morta, velocidade e suavidade de Pan, Tilt e Zoom. Os valores valem para o perfil ativo.");

@@ -44,6 +44,7 @@ public static class SettingsSanitizer
         m.AngularToleranceDeg = F(m.AngularToleranceDeg, 0, 45, 18);
         m.PanTiltSpeedPercent = Math.Clamp(m.PanTiltSpeedPercent, 1, 100);
         m.VirtualZoomPercent = Math.Clamp(m.VirtualZoomPercent, 1, 100);
+        m.ZoomReductionMinPercent = Math.Clamp(m.ZoomReductionMinPercent, 5, 100);
     }
 
     private static void Axis(AxisSettings a, int limit)

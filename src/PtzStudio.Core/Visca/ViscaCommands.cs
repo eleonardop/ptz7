@@ -65,6 +65,19 @@ public static class ViscaCommands
     public static byte[] Home(int address) => new byte[] { Header(address), 0x01, 0x06, 0x04, 0xFF };
 
     /// <summary>Consulta de versão: usada para saber se a câmera responde.</summary>
+    /// <summary>Posição atual do zoom (CAM_ZoomPosInq). Resposta: y0 50 0p 0q 0r 0s FF (0x0000 = aberto/wide).</summary>
+    public static byte[] ZoomPositionInquiry(int address) => new byte[] { Header(address), 0x09, 0x04, 0x47, 0xFF };
+
+    /// <summary>Lê a posição do zoom de uma resposta "y0 50 0p 0q 0r 0s FF". Falso se a resposta não tiver esse formato.</summary>
+    public static bool TryReadZoomPosition(byte[]? reply, out int position)
+    {
+        position = 0;
+        if (reply == null || !IsValueReply(reply)) return false;
+        for (int i = 2; i <= 5; i++) if (reply[i] > 0x0F) return false;
+        position = (reply[2] << 12) | (reply[3] << 8) | (reply[4] << 4) | reply[5];
+        return true;
+    }
+
     public static byte[] VersionInquiry(int address) => new byte[] { Header(address), 0x09, 0x00, 0x02, 0xFF };
 
     // ---------------- Imagem da câmera ----------------

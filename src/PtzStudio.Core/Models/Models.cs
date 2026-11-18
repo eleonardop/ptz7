@@ -128,6 +128,10 @@ public sealed class MotionSettings
     public int PanTiltSpeedPercent { get; set; } = 65;
     /// <summary>Intensidade do zoom do joystick virtual (botões Aproximar/Afastar da tela), de 1% a 100% da velocidade máxima de zoom do perfil.</summary>
     public int VirtualZoomPercent { get; set; } = 50;
+    /// <summary>Reduz a velocidade de Pan/Tilt conforme o zoom fecha (posição lida da câmera). Desligado por padrão.</summary>
+    public bool ReducePanTiltWithZoom { get; set; } = false;
+    /// <summary>Com a redução ligada: velocidade de Pan/Tilt que sobra no zoom máximo, de 5% a 100%.</summary>
+    public int ZoomReductionMinPercent { get; set; } = 25;
 
     // Só para LER arquivos antigos (3 níveis de velocidade). A normalização converte o nível padrão em porcentagem e zera estes campos,
     // que então deixam de ser gravados.

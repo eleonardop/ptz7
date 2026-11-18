@@ -26,6 +26,10 @@ public sealed class AppEngine : IDisposable
     public CameraImage Image { get; }
     /// <summary>Foco automático (estado lido da câmera). Interface e botões do controle usam o mesmo objeto.</summary>
     public CameraFocus Focus { get; }
+    /// <summary>Posição do zoom lida da câmera (para reduzir Pan/Tilt com o zoom fechado).</summary>
+    public CameraZoom Zoom { get; }
+    private readonly CancellationTokenSource _zoomCts = new();
+    private long _zoomFastUntilTicks;   // até quando consultar o zoom com frequência (logo depois de zoom, preset ou Home)
     /// <summary>Tempo entre abrir o programa e a primeira tela aparecer (ms). Só para o Diagnóstico.</summary>
     public double StartupMs { get; set; }
     public DirectInputPad Pad { get; } = new();
@@ -116,13 +120,14 @@ public sealed class AppEngine : IDisposable
         Image.Notice += m => Application.Current?.Dispatcher.BeginInvoke(() => Notice?.Invoke(m));
         Focus = new CameraFocus(Client, () => _camSnap);
         Focus.Notice += m => Application.Current?.Dispatcher.BeginInvoke(() => Notice?.Invoke(m));
+        Zoom = new CameraZoom(Client, () => _camSnap);
         Microsoft.Win32.SystemEvents.PowerModeChanged += OnPowerModeChanged;
         Controller.Message += m => Notice?.Invoke(m);
         Router.Triggered += Execute;
         Client.ErrorReported += t => AddIssue("Câmera: " + t);
         Client.StateChanged += (st, msg) =>
         {
-            if (st == ConnectionState.Desconectado) Controller.SafetyStop("comunicação com a câmera perdida");
+            if (st == ConnectionState.Desconectado) { Controller.SafetyStop("comunicação com a câmera perdida"); Zoom.Reset(); Controller.ZoomFraction = -1; }
             if (st == ConnectionState.Conectado)
             {
                 // Câmera (re)conectada: pergunta a ela quais ajustes de imagem suporta (em segundo plano; nada é presumido)
@@ -203,6 +208,47 @@ public sealed class AppEngine : IDisposable
         ConnectCamera();
         _timer.Start();
         _guardian = new ControlGuardian(Controller);   // thread própria: manda parar se o ciclo de controle travar com a câmera em movimento
+        _ = Task.Run(() => ZoomLoop(_zoomCts.Token));
+    }
+
+    /// <summary>
+    /// Com "Reduzir Pan/Tilt com o zoom" ligado no perfil ativo: pergunta à câmera a posição do zoom e entrega ao controlador.
+    /// Consulta a cada 250 ms enquanto o zoom anda (e alguns segundos depois de zoom, preset ou Home); fora disso, a cada 1,5 s.
+    /// Se a câmera não responder à consulta, espera 15 s antes de tentar de novo (e a redução fica sem efeito).
+    /// Desligada a opção, não envia nenhuma consulta.
+    /// </summary>
+    private async Task ZoomLoop(CancellationToken ct)
+    {
+        bool warned = false;
+        while (!ct.IsCancellationRequested)
+        {
+            int delay = 1500;
+            try
+            {
+                if (Profile.Motion.ReducePanTiltWithZoom && Client.State == ConnectionState.Conectado)
+                {
+                    var now = MonoClock.UtcNow;
+                    if (Controller.SentZoom != 0) Volatile.Write(ref _zoomFastUntilTicks, now.AddSeconds(2).Ticks);
+                    bool fast = now.Ticks < Volatile.Read(ref _zoomFastUntilTicks);
+                    bool ok = await Zoom.RefreshAsync().ConfigureAwait(false);
+                    Controller.ZoomFraction = Zoom.Fraction;
+                    if (ok) { warned = false; delay = fast ? 250 : 1500; }
+                    else if (Zoom.Failures >= 3)
+                    {
+                        delay = 15000;
+                        if (!warned)
+                        {
+                            warned = true;
+                            Application.Current?.Dispatcher.BeginInvoke(() => Notice?.Invoke(
+                                "A câmera não informou a posição do zoom: a redução de Pan/Tilt com o zoom fica sem efeito (nova tentativa em 15 s)."));
+                        }
+                    }
+                    else delay = 500;
+                }
+            }
+            catch { }
+            try { await Task.Delay(delay, ct).ConfigureAwait(false); } catch (OperationCanceledException) { return; }
+        }
     }
 
     /// <summary>Identifica o que define a CONEXÃO com a câmera (o resto, como velocidades, vale na hora).</summary>
@@ -220,6 +266,7 @@ public sealed class AppEngine : IDisposable
     {
         Image.Reset();
         Focus.Reset();
+        Zoom.Reset(); Controller.ZoomFraction = -1;
         RefreshSnapshot();
         AppliedCameraSig = CameraSig(Camera);
         Client.Connect(Camera);
@@ -416,9 +463,11 @@ public sealed class AppEngine : IDisposable
         {
             case ButtonAction.Parar: Controller.StopAll("botão Parar"); break;
             case ButtonAction.SalvarPreset: SavePresetSlot(p, null); break;
-            case ButtonAction.AcionarPreset: if (Controller.RecallPreset(p)) Notice?.Invoke($"Preset {p} acionado"); break;
+            case ButtonAction.AcionarPreset:
+                if (Controller.RecallPreset(p)) { Notice?.Invoke($"Preset {p} acionado"); Volatile.Write(ref _zoomFastUntilTicks, MonoClock.UtcNow.AddSeconds(6).Ticks); }
+                break;
             case ButtonAction.AlternarPerfil: NextProfile(); break;
-            case ButtonAction.Home: Controller.Home(); break;
+            case ButtonAction.Home: Controller.Home(); Volatile.Write(ref _zoomFastUntilTicks, MonoClock.UtcNow.AddSeconds(6).Ticks); break;
             case ButtonAction.AutoFoco: _ = ToggleAutoFocusAsync(); break;
             case ButtonAction.FocoUmToque: _ = Focus.OnePushAsync(); break;
         }
@@ -518,6 +567,7 @@ public sealed class AppEngine : IDisposable
     public void Dispose()
     {
         _timer.Stop();
+        try { _zoomCts.Cancel(); } catch { }
         Microsoft.Win32.SystemEvents.PowerModeChanged -= OnPowerModeChanged;
         _guardian?.Dispose();
         try { Controller.StopAll("encerrando o programa"); } catch { }

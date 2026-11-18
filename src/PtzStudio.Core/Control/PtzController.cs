@@ -260,6 +260,9 @@ public sealed class PtzController
             var o = _motion.Process(ax, ay, az, dt, prof.Motion);
             // Pan/Tilt: porcentagem do perfil (1% a 100%). Zoom: independente — só o joystick virtual tem a sua intensidade própria.
             double ptScale = Math.Clamp(prof.Motion.PanTiltSpeedPercent, 1, 100) / 100.0;
+            double zf = prof.Motion.ReducePanTiltWithZoom ? ZoomSpeedFactor(ZoomFraction, prof.Motion.ZoomReductionMinPercent) : 1.0;
+            Volatile.Write(ref _zoomFactorBits, BitConverter.DoubleToInt64Bits(zf));
+            ptScale *= zf;
             double zoomScale = _owner == InputSource.Virtual ? Math.Clamp(prof.Motion.VirtualZoomPercent, 1, 100) / 100.0 : 1.0;
             int pan = ToInt(o.Pan, ptScale, cam.MaxPanSpeed);
             int tilt = ToInt(o.Tilt, ptScale, cam.MaxTiltSpeed);
@@ -273,6 +276,33 @@ public sealed class PtzController
 
     /// <summary>Único ponto de saída de comandos do controlador (exceto a parada fora de banda do guardião).</summary>
     private void Tx(byte[] packet) => _tx.Send(packet);
+
+    // ---------------- redução de Pan/Tilt com o zoom ----------------
+    private long _zoomFracBits = BitConverter.DoubleToInt64Bits(-1);
+    private long _zoomFactorBits = BitConverter.DoubleToInt64Bits(1);
+
+    /// <summary>Posição do zoom lida da câmera (0 = aberto, 1 = máximo; -1 = desconhecida). Pode ser atualizada de qualquer thread.</summary>
+    public double ZoomFraction
+    {
+        get => BitConverter.Int64BitsToDouble(Volatile.Read(ref _zoomFracBits));
+        set => Volatile.Write(ref _zoomFracBits, BitConverter.DoubleToInt64Bits(double.IsNaN(value) ? -1 : value));
+    }
+
+    /// <summary>Multiplicador aplicado agora à velocidade de Pan/Tilt pela redução com o zoom (1 = sem redução).</summary>
+    public double PanTiltZoomFactor => BitConverter.Int64BitsToDouble(Volatile.Read(ref _zoomFactorBits));
+
+    /// <summary>
+    /// Quanto da velocidade de Pan/Tilt sobra com o zoom nesta posição: 1 com o zoom aberto, caindo devagar no começo e mais
+    /// no fim, até <paramref name="minPercent"/> no zoom máximo. Posição desconhecida = sem redução.
+    /// O movimento nunca para por causa disso: a menor velocidade enviada continua sendo 1.
+    /// </summary>
+    public static double ZoomSpeedFactor(double fraction, int minPercent)
+    {
+        if (double.IsNaN(fraction) || fraction < 0) return 1.0;
+        double min = Math.Clamp(minPercent, 5, 100) / 100.0;
+        double f = Math.Clamp(fraction, 0, 1);
+        return 1.0 - (1.0 - min) * Math.Pow(f, 1.5);
+    }
 
     private static int ToInt(double speed, double level, int cameraMax)
     {

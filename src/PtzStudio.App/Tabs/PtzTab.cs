@@ -6,6 +6,7 @@ using System.Windows.Threading;
 using PtzStudio.App.Engine;
 using PtzStudio.App.Live;
 using PtzStudio.App.Ui;
+using PtzStudio.Core.Control;
 using PtzStudio.Core.Models;
 using PtzStudio.Core.Visca;
 
@@ -26,6 +27,9 @@ internal sealed class PtzTab : TabBase
     private readonly TextBlock _sent = Ux.Text("", 12, true);
     private readonly TextBlock _ptEffect = Ux.Text("", 12, false, Ux.Muted);
     private readonly TextBlock _zoomEffect = Ux.Text("", 12, false, Ux.Muted);
+    private readonly TextBlock _zoomStatus = Ux.Text("", 12, false, Ux.Muted);
+    private string _zoomShown = "\u0001";
+    private CheckBox _reduceCheck = new();
     private readonly StackPanel _imageHost = new();
     private Button _afBtn = new();
     private readonly TextBlock _afHint = Ux.Text("", 12, false, Ux.Muted);
@@ -183,7 +187,20 @@ internal sealed class PtzTab : TabBase
         }, _zoomEffect);
         zoomSpeed.Margin = new Thickness(10, 0, 0, 0);
         zoomSpeed.ToolTip = "Velocidade dos botões Aproximar/Afastar da tela. Não depende da velocidade Pan/Tilt. A câmera tem poucos níveis de velocidade de zoom.";
-        var speed = Card(Columns((ptSpeed, 1), (zoomSpeed, 1)), $"VELOCIDADE · PERFIL {E.Settings.ActiveProfile.ToUpperInvariant()}");
+        // Redução de Pan/Tilt com o zoom (por perfil). O quanto reduz fica na aba Movimento.
+        var reduce = _reduceCheck = new CheckBox
+        {
+            Content = "Reduzir Pan/Tilt com o zoom", IsChecked = m.ReducePanTiltWithZoom, FontSize = 13, Focusable = false,
+            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 4, 10, 0),
+            ToolTip = "Ligado: quanto mais fechado o zoom, mais lento o Pan/Tilt (a posição do zoom é lida da câmera). " +
+                      "Com o zoom aberto a velocidade não muda. Vale para o controle, o joystick virtual e as setas. Cada perfil guarda a sua.\n" +
+                      "O quanto reduz no zoom máximo se ajusta na aba Movimento."
+        };
+        reduce.Click += (_, _) => { m.ReducePanTiltWithZoom = reduce.IsChecked == true; E.Save(); _zoomShown = "\u0001"; };
+        _zoomStatus.Margin = new Thickness(0, 4, 0, 0); _zoomStatus.VerticalAlignment = VerticalAlignment.Center;
+        var reduceRow = new WrapPanel();
+        reduceRow.Children.Add(reduce); reduceRow.Children.Add(_zoomStatus);
+        var speed = Card(Ux.V(Columns((ptSpeed, 1), (zoomSpeed, 1)), reduceRow), $"VELOCIDADE · PERFIL {E.Settings.ActiveProfile.ToUpperInvariant()}");
 
         // ================= DIREITA: joystick virtual (arrastar o centro ou segurar uma das 8 setas) =================
         _joy = new VirtualJoystick { HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 6) };
@@ -461,6 +478,24 @@ internal sealed class PtzTab : TabBase
         _zoomEffect.ToolTip = $"A câmera tem só {cam.MaxZoomSpeed} níveis de velocidade de zoom.";
     }
 
+    /// <summary>Mostra, ao lado da caixa "Reduzir Pan/Tilt com o zoom", a posição do zoom lida da câmera e quanto da velocidade sobra.</summary>
+    private void RefreshZoomReduction()
+    {
+        bool on = E.Profile.Motion.ReducePanTiltWithZoom;
+        if (_reduceCheck.IsChecked != on) _reduceCheck.IsChecked = on;     // a mesma opção existe na aba Movimento
+        string text;
+        if (!on) text = "";
+        else if (E.Zoom.Fraction < 0) text = E.Client.State == ConnectionState.Conectado ? "zoom ainda não lido da câmera" : "sem câmera";
+        else
+        {
+            double f = PtzController.ZoomSpeedFactor(E.Zoom.Fraction, E.Profile.Motion.ZoomReductionMinPercent);
+            text = $"zoom {E.Zoom.Fraction * 100:0}% → velocidade {f * 100:0}%";
+        }
+        if (text == _zoomShown) return;
+        _zoomShown = text;
+        _zoomStatus.Text = text;
+    }
+
     /// <summary>Mostra o estado REAL do foco (lido da câmera) no botão de autofoco.</summary>
     private void RefreshFocus()
     {
@@ -508,6 +543,7 @@ internal sealed class PtzTab : TabBase
         _info.Text = (c.SafetyLatched ? "Parada de segurança: leve os controles ao neutro para continuar.\n" : "") +
                      (c.WaitingNeutralAfterPreset ? "Indo para " + (c.Traveling ?? "a posição") + ": o analógico fica ignorado até voltar ao centro.\n" : "") + who;
         RefreshFocus();
+        RefreshZoomReduction();
         if (ImageSignature() != _imgSig) BuildImageCard();
         SyncImageValues();
         RebuildPresets();

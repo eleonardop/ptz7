@@ -49,6 +49,16 @@ A tela foi organizada para operar sem rolar:
 - Se a janela for baixa demais, o cartão **Brilho e exposição** se recolhe sozinho (a seta ao lado do título abre e fecha). Se a janela for estreita demais, os controles descem para baixo do vídeo.
 - Várias explicações que antes ocupavam espaço na tela agora aparecem ao **parar o mouse** sobre o controle.
 
+## Reduzir Pan/Tilt com o zoom
+Com o zoom muito fechado, qualquer movimento parece rápido demais. A caixa **Reduzir Pan/Tilt com o zoom**, no cartão de velocidade da aba Controle PTZ, resolve isso:
+- **Ligada:** o programa pergunta à câmera a posição do zoom e diminui a velocidade de Pan/Tilt conforme o zoom fecha. Com o zoom aberto nada muda; a redução cresce aos poucos e é maior perto do zoom máximo.
+- Ao lado da caixa aparece o que está valendo, por exemplo "zoom 80% → velocidade 46%".
+- Vale para o controle, o joystick virtual e as setas. O zoom em si e os presets não mudam de velocidade.
+- **Quanto reduz:** aba **Movimento > Reduzir Pan/Tilt com o zoom > Velocidade que sobra no zoom máximo** (padrão 25%). Cada perfil guarda a sua escolha.
+- A câmera nunca para por causa disso: a menor velocidade enviada continua sendo 1.
+- Se a câmera não informar a posição do zoom, aparece um aviso e nada é reduzido.
+- Desligada (padrão), o programa não faz nenhuma consulta a mais à câmera.
+
 ## Setas de direção no joystick virtual
 Em volta do botão azul do joystick virtual há **8 setas** (cima, baixo, esquerda, direita e as quatro diagonais).
 - **Segure** uma seta com o mouse: a câmera anda naquela direção. **Solte**: a câmera para na hora.
