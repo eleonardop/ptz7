@@ -28,6 +28,9 @@ public sealed class AppEngine : IDisposable
     public CameraFocus Focus { get; }
     /// <summary>Posição do zoom lida da câmera (para reduzir Pan/Tilt com o zoom fechado).</summary>
     public CameraZoom Zoom { get; }
+    /// <summary>Vibração zero a cada 3 minutos para o controle XInput (tentativa de evitar o desligamento por inatividade).</summary>
+    public ControllerKeepAwake KeepAwake { get; } = new(new XInputPorts());
+    private volatile bool _keepAwakeBusy;
     private readonly CancellationTokenSource _zoomCts = new();
     private long _zoomFastUntilTicks;   // até quando consultar o zoom com frequência (logo depois de zoom, preset ou Home)
     /// <summary>Tempo entre abrir o programa e a primeira tela aparecer (ms). Só para o Diagnóstico.</summary>
@@ -327,6 +330,18 @@ public sealed class AppEngine : IDisposable
         double gapMs = (now - _lastTick).TotalMilliseconds;
         double dt = Math.Clamp((now - _lastTick).TotalSeconds, 0.001, 0.1);
         _lastTick = now;
+        // Manter o controle acordado: roda fora da thread da tela (a consulta às portas XInput pode levar alguns milissegundos).
+        // Não toca nos valores de Pan/Tilt/Zoom nem na detecção de controle desconectado.
+        if (!_keepAwakeBusy)
+        {
+            bool on = Settings.KeepControllerAwake;
+            if (!on) KeepAwake.Tick(now, false);                 // desligada: só zera a contagem, nada é enviado
+            else if (KeepAwake.IsDue(now, true))
+            {
+                _keepAwakeBusy = true;
+                Task.Run(() => { try { KeepAwake.Tick(MonoClock.UtcNow, true); } catch { } finally { _keepAwakeBusy = false; } });
+            }
+        }
         // Medição do atraso do ciclo de controle (aba Diagnóstico): maior intervalo entre dois ciclos nos últimos ~10 s e desde a abertura.
         if (gapMs > _loopWinMax) _loopWinMax = gapMs;
         if (gapMs > LoopMaxMs && (now - _loopStart).TotalSeconds > 5) LoopMaxMs = gapMs;      // ignora a abertura do programa

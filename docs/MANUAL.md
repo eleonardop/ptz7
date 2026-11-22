@@ -49,6 +49,14 @@ A tela foi organizada para operar sem rolar:
 - Se a janela for baixa demais, o cartão **Brilho e exposição** se recolhe sozinho (a seta ao lado do título abre e fecha). Se a janela for estreita demais, os controles descem para baixo do vídeo.
 - Várias explicações que antes ocupavam espaço na tela agora aparecem ao **parar o mouse** sobre o controle.
 
+## Manter o controle acordado
+O GameSir Nova 2 Lite se desliga sozinho depois de 10 minutos sem uso, mesmo no cabo. Para tentar evitar isso, o PTZ Studio envia ao controle, a cada 3 minutos, um **comando de vibração com intensidade zero** (o controle não vibra).
+- Ligado por padrão. Para desligar: aba **Diagnóstico > Manter o controle acordado**.
+- Só funciona com o controle em **modo XInput** (luz verde), por cabo ou receptor. No Bluetooth o Windows não oferece XInput.
+- Não move a câmera, não altera Pan/Tilt/Zoom e não esconde uma falha: se o controle cair, o programa avisa e para a câmera como antes.
+- A mesma aba mostra quando o último sinal foi enviado e para quantos controles.
+- **Ainda não está confirmado que o GameSir conta esse sinal como atividade.** Teste: no cabo e em modo XInput, deixe o controle parado por 15 minutos com o programa aberto. Se ele continuar respondendo, funcionou. Se desligar mesmo assim, o modelo ignora o sinal.
+
 ## Reduzir Pan/Tilt com o zoom
 Com o zoom muito fechado, qualquer movimento parece rápido demais. A caixa **Reduzir Pan/Tilt com o zoom**, no cartão de velocidade da aba Controle PTZ, resolve isso:
 - **Ligada:** o programa pergunta à câmera a posição do zoom e diminui a velocidade de Pan/Tilt conforme o zoom fecha. Com o zoom aberto nada muda; a redução cresce aos poucos e é maior perto do zoom máximo.

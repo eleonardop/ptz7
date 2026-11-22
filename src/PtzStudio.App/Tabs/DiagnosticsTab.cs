@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using PtzStudio.App.Engine;
 using PtzStudio.App.Ui;
+using PtzStudio.Core;
 using PtzStudio.Core.Input;
 using PtzStudio.Core.Visca;
 
@@ -17,6 +18,7 @@ internal sealed class DiagnosticsTab : TabBase
     private readonly TextBlock _cam = Ux.Text("", 14);
     private readonly TextBlock _test = Ux.Text("", 14, true);
     private readonly TextBlock _prog = Ux.Text("", 14);
+    private readonly TextBlock _awake = Ux.Text("", 13, false, Ux.Muted);
     private readonly TextBlock _issues = Ux.Text("", 14, false, Ux.Muted);
     private string _issuesShown = "\u0001";
 
@@ -48,6 +50,13 @@ internal sealed class DiagnosticsTab : TabBase
         var page = new StackPanel();
         page.Children.Add(Ux.Header("Diagnóstico", "Estado do controle e da câmera, e testes de cada função."));
         page.Children.Add(Ux.Group("Controle", _pad));
+        page.Children.Add(Ux.Group("Manter o controle acordado", Ux.V(
+            Ux.Check("Enviar sinal de vibração zero ao controle a cada 3 minutos", E.Settings.KeepControllerAwake, v => { E.Settings.KeepControllerAwake = v; E.Save(); }),
+            Ux.Text("Tentativa de evitar que o GameSir se desligue sozinho depois de 10 minutos parado. O sinal é um comando de vibração com " +
+                    "intensidade zero: o controle não vibra, a câmera não se move e a detecção de controle desconectado continua igual. " +
+                    "Só funciona com o controle em modo XInput (luz verde), por cabo ou receptor. Se o controle se desligar mesmo assim, " +
+                    "o modelo não conta esse sinal como atividade.", 13, false, Ux.Muted),
+            _awake)));
         page.Children.Add(Ux.Group("Câmera", _cam));
         page.Children.Add(Ux.Group("Testes individuais", tests));
         page.Children.Add(Ux.Group("Programa", _prog));
@@ -103,6 +112,11 @@ internal sealed class DiagnosticsTab : TabBase
 
     protected override void Refresh()
     {
+        var k = E.KeepAwake;
+        _awake.Text = !E.Settings.KeepControllerAwake ? "Desligado."
+            : k.LastSent is not DateTime ls ? "Aguardando o primeiro sinal…"
+            : $"Último sinal há {(MonoClock.UtcNow - ls).TotalMinutes:0} min, para {k.LastCount} controle(s) XInput ({k.Rounds} sinais desde a abertura)." +
+              (k.LastCount == 0 ? " Nenhum controle em modo XInput: o sinal não chega ao controle." : "");
         var p = E.Pad;
         if (!p.Connected) _pad.Text = "Nenhum controle detectado.\nConecte o GameSir por USB ou Bluetooth. Se ele estiver pareado mas não aparece, tente trocar o modo do controle.";
         else

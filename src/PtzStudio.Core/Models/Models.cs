@@ -206,6 +206,8 @@ public sealed class AppSettings
     public bool MinimizeToTray { get; set; } = true;
     /// <summary>O botão fechar (X) esconde a janela na bandeja em vez de encerrar, para não fechar sem querer durante a transmissão.</summary>
     public bool CloseToTray { get; set; } = true;
+    /// <summary>Envia vibração ZERO ao controle XInput a cada 3 minutos, tentando evitar que ele se desligue por inatividade.</summary>
+    public bool KeepControllerAwake { get; set; } = true;
     /// <summary>Último repouso válido dos eixos de cada controle (VID:PID). Serve de comparação já na primeira conexão ao abrir o programa.</summary>
     public Dictionary<string, double[]> RestByDevice { get; set; } = new();
 
